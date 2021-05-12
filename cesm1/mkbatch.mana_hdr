@@ -1,0 +1,118 @@
+#! /bin/csh -f
+ 
+source /etc/profile.d/lmod.csh
+#################################################################################
+if ($PHASE == set_batch) then
+#################################################################################
+ 
+source ./Tools/ccsm_getenv || exit -1
+maxtasks
+module load lang/Perl/5.28.1-GCCcore-6.3.0
+set ntasks = `${CASEROOT}/Tools/taskmaker.pl -sumonly`
+set maxthrds = `${CASEROOT}/Tools/taskmaker.pl -maxthrds`
+module purge
+@ nodes = $ntasks / ${MAX_TASKS_PER_NODE}
+if ( $ntasks % ${MAX_TASKS_PER_NODE} > 0) then
+@ nodes = $nodes + 1
+@ ntasks = $nodes * ${MAX_TASKS_PER_NODE}
+endif
+@ taskpernode = ${MAX_TASKS_PER_NODE} / ${maxthrds}
+set qname = batch
+set tlimit = "3-00:00:00"
+ 
+if ($?TESTMODE) then
+set file = $CASEROOT/${CASE}.test
+else
+set file = $CASEROOT/${CASE}.run
+endif
+ 
+cat >! $file << EOF1
+#!/bin/csh
+#SBATCH --job-name=${CASE}
+#SBATCH --constraint="ib_hdr"
+#SBATCH --distribution="*:*:*"
+#SBATCH --partition=exclusive
+#SBATCH --time=$tlimit
+#SBATCH --job-name=${CASE}
+#SBATCH --ntasks=$ntasks
+#SBATCH --cpus-per-task=$maxthrds
+#SBATCH --output=${CASE}.%A.out
+ 
+ 
+###### ######## ###### ##
+# Libfabric method
+###### ######## ###### ##
+# Configure the Intel MPI parameters
+setenv I_MPI_FABRICS "shm:ofi"
+setenv I_MPI_PMI_LIBRARY "/lib64/libpmi.so"
+ setenv I_MPI_HYDRA_TOPOLIB "ipl" # May be required if newer libfabric and intel MPI is used
+### FOR HDR NETWORK #####
+# https://ofiwg.github.io/libfabric/master/man/
+# https://ofiwg.github.io/libfabric/v1.9.1/man/
+setenv FI_PROVIDER "shm,verbs;ofi_rxm"
+setenv FI_MR_CACHE_MONITOR "disabled" # currently a bug exists that a segfault could happen
+setenv FI_VERBS_MR_CACHE_ENABLE "0" # currently a bug exists that a segfault could happen
+setenv  FI_VERBS_INLINE_SIZE "256"
+setenv FI_UNIVERSE_SIZE "${maxtasks}" # should equal at least the max number of tasks one task will communicate with
+setenv FI_VERBS_IFACE "i"
+###### ######## ###### ##
+ 
+###### ######## ###### ##
+# DAPL method (deprecated but not gone in Intel 2018)
+###### ######## ###### ##
+# Configure the Intel MPI parameters
+ 
+#setenv I_MPI_FABRICS "shm:dapl"
+#setenv I_MPI_PMI_LIBRARY "/lib64/libpmi.so"
+ 
+###### ######## ###### ##
+source /etc/profile.d/lmod.csh
+module purge
+ 
+EOF1
+ 
+#################################################################################
+else if ($PHASE == set_exe) then
+#################################################################################
+module load lang/Perl/5.28.1-GCCcore-6.3.0
+set maxthrds = `${CASEROOT}/Tools/taskmaker.pl -maxthrds`
+set maxtasks = `${CASEROOT}/Tools/taskmaker.pl -sumtasks`
+module purge
+ 
+ 
+cat >> ${CASEROOT}/${CASE}.run << EOF1
+# -------------------------------------------------------------------------
+# Run the model
+# -------------------------------------------------------------------------
+ 
+sleep 25
+cd \$RUNDIR
+setenv OMP_NUM_THREADS ${maxthrds}
+module load data/netCDF-Fortran/4.4.5-intel-2018.5.274
+module load data/netCDF/4.6.2-intel-2018.5.274
+module load toolchain/intel/2018.5.274
+echo "\`date\` -- CSM EXECUTION BEGINS HERE"
+srun --ntasks=${maxtasks} --cpu_bind=sockets --cpu_bind=verbose --kill-on-bad-exit \$EXEROOT/cesm.exe >&! cesm.log.\$LID
+wait
+echo "\`date\` -- CSM EXECUTION HAS FINISHED"
+ 
+EOF1
+ 
+ 
+#################################################################################
+else if ($PHASE == set_larch) then
+#################################################################################
+ 
+#This is a place holder for a long-term archiving script
+ 
+#################################################################################
+else
+#################################################################################
+ 
+echo " PHASE setting of $PHASE is not an accepted value"
+echo " accepted values are set_batch, set_exe and set_larch"
+exit 1
+ 
+#################################################################################
+endif
+#################################################################################

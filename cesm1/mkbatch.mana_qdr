@@ -1,0 +1,100 @@
+#! /bin/csh -f
+ 
+source /etc/profile.d/lmod.csh
+#################################################################################
+if ($PHASE == set_batch) then
+#################################################################################
+ 
+source ./Tools/ccsm_getenv || exit -1
+ 
+module load lang/Perl/5.28.1-GCCcore-6.3.0
+set ntasks = `${CASEROOT}/Tools/taskmaker.pl -sumonly`
+set maxthrds = `${CASEROOT}/Tools/taskmaker.pl -maxthrds`
+module purge
+@ nodes = $ntasks / ${MAX_TASKS_PER_NODE}
+if ( $ntasks % ${MAX_TASKS_PER_NODE} > 0) then
+@ nodes = $nodes + 1
+@ ntasks = $nodes * ${MAX_TASKS_PER_NODE}
+endif
+@ taskpernode = ${MAX_TASKS_PER_NODE} / ${maxthrds}
+set qname = batch
+set tlimit = "3-00:00:00"
+ 
+if ($?TESTMODE) then
+set file = $CASEROOT/${CASE}.test
+else
+set file = $CASEROOT/${CASE}.run
+endif
+ 
+cat >! $file << EOF1
+#!/bin/csh
+#SBATCH --job-name=${CASE}
+#SBATCH --constraint="ib_qdr"
+#SBATCH --distribution="*:*:*"
+#SBATCH --partition=exclusive
+#SBATCH --time=$tlimit
+#SBATCH --job-name=${CASE}
+#SBATCH --ntasks=$ntasks
+#SBATCH --cpus-per-task=$maxthrds
+#SBATCH --output=${CASE}.%A.out
+ 
+ 
+# Configure the Intel MPI parameters
+setenv I_MPI_FABRICS "shm:ofi"
+setenv I_MPI_PMI_LIBRARY "/lib64/libpmi.so"
+# ### FOR QDR NETWORK #####
+setenv FI_PROVIDER "psm"
+setenv FI_PSM_TAGGED_RMA 0
+setenv FI_PSM_AM_MSG 1
+setenv FI_PSM_UUID \`uuidgen\`
+# # ###### ######## ###### ##
+source /etc/profile.d/lmod.csh
+module purge
+ 
+EOF1
+ 
+#################################################################################
+else if ($PHASE == set_exe) then
+#################################################################################
+module load lang/Perl/5.28.1-GCCcore-6.3.0
+set maxthrds = `${CASEROOT}/Tools/taskmaker.pl -maxthrds`
+set maxtasks = `${CASEROOT}/Tools/taskmaker.pl -sumtasks`
+module purge
+ 
+ 
+cat >> ${CASEROOT}/${CASE}.run << EOF1
+# -------------------------------------------------------------------------
+# Run the model
+# -------------------------------------------------------------------------
+ 
+sleep 25
+cd \$RUNDIR
+echo "\`date\` -- CSM EXECUTION BEGINS HERE"
+setenv OMP_NUM_THREADS ${maxthrds}
+module load data/netCDF-Fortran/4.4.5-intel-2018.5.274
+module load data/netCDF/4.6.2-intel-2018.5.274
+module load toolchain/intel/2018.5.274
+srun --ntasks=${maxtasks} --cpu_bind=sockets --cpu_bind=verbose --kill-on-bad-exit \$EXEROOT/cesm.exe >&! cesm.log.\$LID
+wait
+echo "\`date\` -- CSM EXECUTION HAS FINISHED"
+ 
+EOF1
+ 
+ 
+#################################################################################
+else if ($PHASE == set_larch) then
+#################################################################################
+ 
+#This is a place holder for a long-term archiving script
+ 
+#################################################################################
+else
+#################################################################################
+ 
+echo " PHASE setting of $PHASE is not an accepted value"
+echo " accepted values are set_batch, set_exe and set_larch"
+exit 1
+ 
+#################################################################################
+endif
+#################################################################################

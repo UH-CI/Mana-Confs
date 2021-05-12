@@ -1,0 +1,27 @@
+#! /bin/csh -f
+ 
+# -------------------------------------------------------------------------
+# UHHPC_QDR build specific settings
+# -------------------------------------------------------------------------
+ 
+ 
+source /etc/profile.d/lmod.csh
+module purge
+ 
+module load devel/CMake/3.12.1-intel-2018.5.274
+module load lang/Perl/5.28.1-GCCcore-6.3.0
+module load data/netCDF-Fortran/4.4.5-intel-2018.5.274
+module load data/netCDF/4.6.2-intel-2018.5.274
+module load toolchain/intel/2018.5.274
+ 
+setenv NETCDF ${HOME}/netcdf4
+setenv LD_LIBRARY_PATH ${HOME}/netcdf4/lib/:$LD_LIBRARY_PATH
+setenv LIBRARY_PATH ${HOME}/netcdf4/lib/:$LIBRARY_PATH
+setenv PATH ${HOME}/netcdf4/bin/:$PATH
+setenv CPATH ${HOME}/netcdf4/include/:$CPATH
+ 
+# -------------------------------------------------------------------------
+# Build and runtime environment variables - edit before the initial build
+# -------------------------------------------------------------------------
+limit stacksize unlimited
+limit datasize unlimited
