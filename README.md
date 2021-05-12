@@ -1,0 +1,1 @@
+A collection of configuration files that different applications might require in the case you are unable to use a pre-installed module, need to compile a software yourself or due to how the application works in general.
