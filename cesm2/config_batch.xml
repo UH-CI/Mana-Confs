@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<config_batch version="2.1">
+  <batch_system MACH="mana-qdr" type="slurm" >
+    <batch_submit>sbatch</batch_submit>
+    <submit_args>
+      <arg flag="--time" name="$JOB_WALLCLOCK_TIME"/>
+      <arg flag="-p" name="$JOB_QUEUE"/>
+      <arg flag="--constraint" name="ib_qdr"/>
+      <arg flag="--exclusive"/>
+      <arg flag="--mem=0" />
+      <arg flag="--distribution" name="*:*:*" />
+      <arg flag="--account" name="uh"/>
+    </submit_args>
+    <queues>
+      <queue walltimemax="4:00:00" nodemin="1" nodemax="2">sandbox</queue>
+      <queue walltimemax="72:00:00" nodemin="1" nodemax="20" default="true">exclusive</queue>
+      <queue walltimemax="168:00:00" nodemin="1" nodemax="20" >exclusive-long</queue>
+      <queue walltimemax="72:00:00" nodemin="1" nodemax="20" >kill-exclusive</queue>
+    </queues>
+  </batch_system>
+
+  <batch_system MACH="mana-hdr" type="slurm" >
+    <batch_submit>sbatch</batch_submit>
+    <submit_args>
+      <arg flag="--time" name="$JOB_WALLCLOCK_TIME"/>
+      <arg flag="-p" name="$JOB_QUEUE"/>
+      <arg flag="--constraint" name="ib_hdr"/>
+      <arg flag="--exclusive"/>
+      <arg flag="--mem=0" />
+      <arg flag="--distribution" name="*:*:*" />
+      <arg flag="--account" name="uh"/>
+    </submit_args>
+    <queues>
+      <queue walltimemax="72:00:00" nodemin="1" nodemax="20" default="true">exclusive</queue>
+      <queue walltimemax="168:00:00" nodemin="1" nodemax="20" >exclusive-long</queue>
+      <queue walltimemax="72:00:00" nodemin="1" nodemax="20" >kill-exclusive</queue>
+    </queues>
+  </batch_system>
+</config_batch>
+
