@@ -1,0 +1,2 @@
+This directory contains files that one would need to try and run CESM 1.x on Mana.  all but the submissions cript should be added to $CCSMROOT/scripts/ccsm_utils/Machines in order to register it with the CESM setup/build/run scripts.  Some modification might be required if you wish to use a different scratch directory or wish to change what partition and/or SLURM account is ued to execute the primary job.
+
