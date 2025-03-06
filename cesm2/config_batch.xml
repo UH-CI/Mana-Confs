@@ -1,40 +1,33 @@
 <?xml version="1.0"?>
-<config_batch version="2.1">
-  <batch_system MACH="mana-qdr" type="slurm" >
-    <batch_submit>sbatch</batch_submit>
-    <submit_args>
-      <arg flag="--time" name="$JOB_WALLCLOCK_TIME"/>
-      <arg flag="-p" name="$JOB_QUEUE"/>
-      <arg flag="--constraint" name="ib_qdr"/>
-      <arg flag="--exclusive"/>
-      <arg flag="--mem=0" />
-      <arg flag="--distribution" name="*:*:*" />
-      <arg flag="--account" name="uh"/>
-    </submit_args>
-    <queues>
-      <queue walltimemax="4:00:00" nodemin="1" nodemax="2">sandbox</queue>
-      <queue walltimemax="72:00:00" nodemin="1" nodemax="20" default="true">exclusive</queue>
-      <queue walltimemax="168:00:00" nodemin="1" nodemax="20" >exclusive-long</queue>
-      <queue walltimemax="72:00:00" nodemin="1" nodemax="20" >kill-exclusive</queue>
-    </queues>
-  </batch_system>
 
-  <batch_system MACH="mana-hdr" type="slurm" >
+  <batch_system MACH="koa" type="slurm">
+    <batch_query per_job_arg="-j">squeue</batch_query>
     <batch_submit>sbatch</batch_submit>
+    <batch_cancel>scancel</batch_cancel>
+    <batch_directive>#SBATCH</batch_directive>
+    <jobid_pattern>(\d+)$</jobid_pattern>
+    <depend_string> --dependency=afterok:jobid</depend_string>
+    <depend_allow_string> --dependency=afterany:jobid</depend_allow_string>
+    <depend_separator>,</depend_separator>
+    <walltime_format>%H:%M:%S</walltime_format>
+    <batch_mail_flag>--mail-user</batch_mail_flag>
+    <batch_mail_type_flag>--mail-type</batch_mail_type_flag>
+    <batch_mail_type>none, all, begin, end, fail</batch_mail_type>
     <submit_args>
-      <arg flag="--time" name="$JOB_WALLCLOCK_TIME"/>
+      <arg flag="-t" name="$JOB_WALLCLOCK_TIME"/>
       <arg flag="-p" name="$JOB_QUEUE"/>
-      <arg flag="--constraint" name="ib_hdr"/>
-      <arg flag="--exclusive"/>
-      <arg flag="--mem=0" />
-      <arg flag="--distribution" name="*:*:*" />
-      <arg flag="--account" name="uh"/>
     </submit_args>
+    <directives>
+      <directive> --job-name={{ job_id }}</directive>
+      <directive> --nodes={{ num_nodes }}</directive>
+      <directive> --ntasks-per-node={{ tasks_per_node }}</directive>
+      <directive> --output={{ job_id }}   </directive>
+      <directive> --exclusive             </directive>
+      <directive> --mem=0                 </directive>     
+      <directive> --account=uh         </directive>
+      <directive> --partition=exclusive       </directive>
+    </directives>
     <queues>
       <queue walltimemax="72:00:00" nodemin="1" nodemax="20" default="true">exclusive</queue>
-      <queue walltimemax="168:00:00" nodemin="1" nodemax="20" >exclusive-long</queue>
-      <queue walltimemax="72:00:00" nodemin="1" nodemax="20" >kill-exclusive</queue>
     </queues>
   </batch_system>
-</config_batch>
-
