@@ -36,6 +36,7 @@
         <command name="load">toolchain/intel/2022b</command>
         <command name="load">lang/Python/3.10.8-GCCcore-12.2.0</command>
         <command name="load">lang/Perl/5.36.0-GCCcore-12.2.0</command>
+        <command name="load">data/XML-LibXML/2.0208-GCCcore-12.2.0</command>
       </modules>
       <modules mpilib="impi">
         <command name="load">data/netCDF-WRF/C-4.9.0_CXX-4.3.1_F-4.6.0_p-1.12.3-iimpi-2022b</command>
